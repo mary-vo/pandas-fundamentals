@@ -1,104 +1,60 @@
 # -*- coding: utf-8 -*-
- 
+
 import pandas as pd
 import os
 
 df = pd.read_pickle(os.path.join('..', 'data_frame.pickle'))
 
-# Simplest default plot
-acquisition_years = df.groupby('acquisitionYear').size()
-acquisition_years.plot()
+# Smaller object for easier vis
+small_df = df.iloc[49980:50019, :].copy()
+
+# Basic Excel
+# Export to excel
+small_df.to_excel("basic.xlsx")
+# Export to Exc el with out index
+small_df.to_excel("no_index.xlsx", index=False)
+# Limit the columns you want exported
+small_df.to_excel("columns.xlsx", columns=["artist", "title", "year"])
+
+# Multiple worksheets
+# Upload multiple dataframes into excel in different sheets
+# Create an excel writer object
+writer = pd.ExcelWriter('multiple_sheets.xlsx', engine='xlsxwriter')
+small_df.to_excel(writer, sheet_name="Preview", index=False)
+df.to_excel(writer, sheet_name="Complete", index=False)
+writer.save()
+
+# Conditional formatting
+# Coloring with conditional formatting
+
+artist_counts = df['artist'].value_counts()
+artist_counts.head()
+writer = pd.ExcelWriter('colors.xlsx', engine='xlsxwriter')
+artist_counts.to_excel(writer, sheet_name="Artist Counts")
+sheet = writer.sheets['Artist Counts']
+cells_range = 'B2:B{}'.format(len(artist_counts.index))
+sheet.conditional_format(cells_range, {'type': '2_color_scale',
+                              'min_value': '10',
+                              'min_type': 'percentile',
+                              'max_value': '99',
+                              'max_type': 'percentile'})
+writer.save()
+    
+# SQL
+import sqlite3
+
+with sqlite3.connect('my_database.db') as conn:
+    small_df.to_sql('Tate', conn)
+
+# # import sqlalchemy as sa
+# # with sa.create_engine('postgresql://localhost/my_data') as conn:
+# #     small_df.to_sql('Tate', conn)
+    
 
 
-import matplotlib.pyplot as plt
-from matplotlib import rcParams
-rcParams.update({'figure.autolayout': True,
-                 'axes.titlepad': 20})
-
-fig = plt.figure()
-subplot = fig.add_subplot(1, 1, 1)
-acquisition_years.plot(ax=subplot)
-fig.show()
-
-# Add axis labels
-fig = plt.figure()
-subplot = fig.add_subplot(1, 1, 1)
-acquisition_years.plot(ax=subplot)
-subplot.set_xlabel("Acquisition Year")
-subplot.set_ylabel("Artworks Acquired")
-fig.show()
-
-
-
-# Increase ticks granularity
-fig = plt.figure()
-subplot = fig.add_subplot(1, 1, 1)
-acquisition_years.plot(ax=subplot)
-subplot.set_xlabel("Acquisition Year")
-subplot.set_ylabel("Artworks Acquired")
-subplot.locator_params(nbins=40, axis='x')
-fig.show()
-
-
-# Rotate X ticks
-fig = plt.figure()
-subplot = fig.add_subplot(1, 1, 1)
-acquisition_years.plot(ax=subplot, rot=45)
-subplot.set_xlabel("Acquisition Year")
-subplot.set_ylabel("Artworks Acquired")
-subplot.locator_params(nbins=40, axis='x')
-fig.show()
-
-
-
-# Add log scale
-fig = plt.figure()
-subplot = fig.add_subplot(1, 1, 1)
-acquisition_years.plot(ax=subplot, rot=45, logy=True)
-subplot.set_xlabel("Acquisition Year")
-subplot.set_ylabel("Artworks Acquired")
-subplot.locator_params(nbins=40, axis='x')
-fig.show()
-
-
-
-# Add grid
-fig = plt.figure()
-subplot = fig.add_subplot(1, 1, 1)
-acquisition_years.plot(ax=subplot, rot=45, logy=True, grid=True)
-subplot.set_xlabel("Acquisition Year")
-subplot.set_ylabel("Artworks Acquired")
-subplot.locator_params(nbins=40, axis='x')
-fig.show()
-
-
-# Set fonts
-title_font = {'family': 'source sans pro',
-        'color':  'darkblue',
-        'weight': 'normal',
-        'size': 20,
-        }
-labels_font = {'family': 'consolas',
-        'color':  'darkred',
-        'weight': 'normal',
-        'size': 16,
-        }
-
-
-
-fig = plt.figure()
-subplot = fig.add_subplot(1, 1, 1)
-acquisition_years.plot(ax=subplot, rot=45, logy=True, grid=True)
-subplot.set_xlabel("Acquisition Year", fontdict=labels_font, labelpad=10)
-subplot.set_ylabel("Artworks Acquired", fontdict=labels_font)
-subplot.locator_params(nbins=40, axis='x')
-subplot.set_title("Tate Gallery Acquisitions", fontdict=title_font)
-fig.show()
-
-
-# Save to files
-fig.savefig('plot.png')
-fig.savefig('plot.svg', format='svg')
+# # JSON
+# small_df.to_json('default.json')
+# small_df.to_json('table.json', orient='table')
 
 
 
